@@ -22,6 +22,6 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
-    <PackageReference Include="Markdown.Avalonia" Version="11.0.2" />
+    <PackageReference Include="PdfSharp" Version="1.50.5147" />
   </ItemGroup>
 </Project>
