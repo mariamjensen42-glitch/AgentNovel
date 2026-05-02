@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AgentNovel.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="AgentNovel.Views.SplitView"
+             x:DataType="vm:SplitViewModel">
+
+    <Design.DataContext>
+        <vm:SplitViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="16">
+        <Button Grid.Row="0" Content="选择PDF文件" Command="{Binding SelectFileCommand}"
+                HorizontalAlignment="Stretch" Margin="0,0,0,16" />
+
+        <StackPanel Grid.Row="1" Spacing="12" Margin="0,0,0,16"
+                    IsVisible="{Binding CurrentFile, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <TextBlock Text="{Binding CurrentFile.FileName}" FontWeight="Bold" FontSize="16" />
+            <TextBlock Text="{Binding CurrentFile.PageCount, StringFormat='共 {0} 页'}" Opacity="0.7" />
+            
+            <TextBox Text="{Binding PageRange}" Watermark="页码范围 (如: 1-5, 8, 10-15)" />
+            
+            <StackPanel Spacing="8">
+                <RadioButton Content="提取指定页面" IsChecked="{Binding ExtractMode}" />
+                <RadioButton Content="按范围拆分为多个文件" IsChecked="{Binding !ExtractMode}" />
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    IsVisible="{Binding CurrentFile, Converter={x:Static ObjectConverters.IsNull}}">
+            <TextBlock Text="请先选择一个PDF文件" Opacity="0.6" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Spacing="8" Margin="0,16,0,0">
+            <ProgressBar Value="{Binding Progress}" Maximum="100"
+                         IsVisible="{Binding IsProcessing}" />
+            <Button Content="拆分" Command="{Binding SplitCommand}"
+                    IsEnabled="{Binding !IsProcessing}"
+                    HorizontalAlignment="Stretch" />
+        </StackPanel>
+    </Grid>
+</UserControl>

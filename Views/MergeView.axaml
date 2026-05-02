@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AgentNovel.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="AgentNovel.Views.MergeView"
+             x:DataType="vm:MergeViewModel">
+
+    <Design.DataContext>
+        <vm:MergeViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="16">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,16">
+            <Button Content="添加文件" Command="{Binding AddFilesCommand}" />
+            <Button Content="移除文件" Command="{Binding RemoveFileCommand}" 
+                    IsEnabled="{Binding SelectedFile, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <Button Content="清空列表" Command="{Binding ClearFilesCommand}" 
+                    IsEnabled="{Binding PdfFiles.Count, Converter={x:Static ObjectConverters.ToBoolean}}" />
+        </StackPanel>
+
+        <ListBox Grid.Row="1"
+                 ItemsSource="{Binding PdfFiles}"
+                 SelectedItem="{Binding SelectedFile}"
+                 SelectionMode="Single">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid ColumnDefinitions="*,Auto" Margin="4">
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="{Binding FileName}" FontWeight="Bold" />
+                            <TextBlock Text="{Binding PageCount, StringFormat='{}{0} 页'}" Opacity="0.7" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" 
+                                   Text="{Binding FileSize, Converter={x:Static ObjectConverters.StringFormat}, ConverterParameter='{}{0:N0} KB'}"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.7" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel Grid.Row="2" Spacing="8" Margin="0,16,0,0">
+            <ProgressBar Value="{Binding Progress}" Maximum="100" 
+                         IsVisible="{Binding IsProcessing}" />
+            <Button Content="合并" Command="{Binding MergeCommand}" 
+                    IsEnabled="{Binding !IsProcessing}"
+                    HorizontalAlignment="Stretch" />
+        </StackPanel>
+    </Grid>
+</UserControl>
