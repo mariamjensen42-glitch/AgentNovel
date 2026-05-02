@@ -5,77 +5,61 @@ namespace AgentNovel.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
     [ObservableProperty]
-    private object? _currentPage;
+    private ViewModelBase _currentPage = new MergeViewModel();
 
     [ObservableProperty]
-    private bool _isProjectView = true;
+    private bool _isMergeView = true;
+
+    [ObservableProperty]
+    private bool _isSplitView;
+
+    [ObservableProperty]
+    private bool _isPageManagerView;
 
     [ObservableProperty]
     private bool _isSettingsView;
 
-    [ObservableProperty]
-    private bool _isAboutView;
-
-    public MainViewModel(SettingsViewModel settingsViewModel, ProjectViewModel projectViewModel, EditorViewModel editorViewModel)
+    partial void OnIsMergeViewChanged(bool value)
     {
-        SettingsPage = settingsViewModel;
-        ProjectPage = projectViewModel;
-        EditorPage = editorViewModel;
-        AboutPage = new AboutViewModel();
-        CurrentPage = EditorPage;
-    }
-
-    public SettingsViewModel SettingsPage { get; }
-    public ProjectViewModel ProjectPage { get; }
-    public EditorViewModel EditorPage { get; }
-    public AboutViewModel AboutPage { get; }
-
-    partial void OnIsProjectViewChanged(bool oldValue, bool newValue)
-    {
-        if (newValue)
+        if (value)
         {
+            CurrentPage = new MergeViewModel();
+            IsSplitView = false;
+            IsPageManagerView = false;
             IsSettingsView = false;
-            IsAboutView = false;
-            CurrentPage = EditorPage;
-        }
-        else if (!IsSettingsView && !IsAboutView)
-        {
-            IsProjectView = true;
         }
     }
 
-    partial void OnIsSettingsViewChanged(bool oldValue, bool newValue)
+    partial void OnIsSplitViewChanged(bool value)
     {
-        if (newValue)
+        if (value)
         {
-            IsProjectView = false;
-            IsAboutView = false;
-            CurrentPage = SettingsPage;
-        }
-        else if (!IsProjectView && !IsAboutView)
-        {
-            IsSettingsView = true;
-        }
-    }
-
-    partial void OnIsAboutViewChanged(bool oldValue, bool newValue)
-    {
-        if (newValue)
-        {
-            IsProjectView = false;
+            CurrentPage = new SplitViewModel();
+            IsMergeView = false;
+            IsPageManagerView = false;
             IsSettingsView = false;
-            CurrentPage = AboutPage;
-        }
-        else if (!IsProjectView && !IsSettingsView)
-        {
-            IsAboutView = true;
         }
     }
 
-    public void NavigateToEditor(string projectDir, Models.ChapterNode chapter)
+    partial void OnIsPageManagerViewChanged(bool value)
     {
-        EditorPage.LoadChapter(projectDir, chapter);
-        CurrentPage = EditorPage;
-        IsProjectView = true;
+        if (value)
+        {
+            CurrentPage = new PageManagerViewModel();
+            IsMergeView = false;
+            IsSplitView = false;
+            IsSettingsView = false;
+        }
+    }
+
+    partial void OnIsSettingsViewChanged(bool value)
+    {
+        if (value)
+        {
+            CurrentPage = new SettingsViewModel();
+            IsMergeView = false;
+            IsSplitView = false;
+            IsPageManagerView = false;
+        }
     }
 }
