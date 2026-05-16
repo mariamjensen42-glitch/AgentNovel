@@ -49,6 +49,12 @@ public partial class MergeViewModel : ViewModelBase
             FileTypeFilter = new[] { new FilePickerFileType("PDF文件") { Patterns = new[] { "*.pdf" } } }
         };
 
+        if (!string.IsNullOrEmpty(settings.LastProjectPath))
+        {
+            options.SuggestedStartLocation = await StorageProviderHelper.TryGetFolderFromPathAsync(
+                storage, settings.LastProjectPath);
+        }
+
         var files = await storage.OpenFilePickerAsync(options);
 
         foreach (var file in files)
