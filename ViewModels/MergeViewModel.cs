@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using AgentNovel.Messages;
 using AgentNovel.Models;
 using AgentNovel.Services;
 using Avalonia;
@@ -10,12 +11,14 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace AgentNovel.ViewModels;
 
 public partial class MergeViewModel : ViewModelBase
 {
     private readonly PdfService _pdfService = new();
+    private readonly SettingsService _settingsService = new();
 
     [ObservableProperty]
     private ObservableCollection<PdfFile> _pdfFiles = new();
@@ -38,12 +41,21 @@ public partial class MergeViewModel : ViewModelBase
         var storage = desktop.MainWindow?.StorageProvider;
         if (storage == null) return;
 
-        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        var settings = await _settingsService.LoadAsync();
+        var options = new FilePickerOpenOptions
         {
             Title = "选择PDF文件",
             AllowMultiple = true,
             FileTypeFilter = new[] { new FilePickerFileType("PDF文件") { Patterns = new[] { "*.pdf" } } }
-        });
+        };
+
+        if (!string.IsNullOrEmpty(settings.LastProjectPath))
+        {
+            options.SuggestedStartLocation = await StorageProviderHelper.TryGetFolderFromPathAsync(
+                storage, settings.LastProjectPath);
+        }
+
+        var files = await storage.OpenFilePickerAsync(options);
 
         foreach (var file in files)
         {
@@ -51,10 +63,14 @@ public partial class MergeViewModel : ViewModelBase
             {
                 var pdfFile = await _pdfService.LoadPdfAsync(file.Path.LocalPath);
                 PdfFiles.Add(pdfFile);
+
+                settings.LastProjectPath = Path.GetDirectoryName(file.Path.LocalPath);
+                await _settingsService.SaveAsync(settings);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // TODO: 显示错误提示
+                WeakReferenceMessenger.Default.Send(
+                    new NotificationMessage(new NotificationInfo { Message = $"无法加载文件: {file.Name}", Type = NotificationType.Error }));
             }
         }
     }
@@ -77,8 +93,7 @@ public partial class MergeViewModel : ViewModelBase
     [RelayCommand]
     private async Task Merge()
     {
-        if (PdfFiles.Count < 2)
-            return;
+        if (PdfFiles.Count < 2) return;
 
         if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
             return;
@@ -93,8 +108,7 @@ public partial class MergeViewModel : ViewModelBase
             FileTypeChoices = new[] { new FilePickerFileType("PDF文件") { Patterns = new[] { "*.pdf" } } }
         });
 
-        if (file == null)
-            return;
+        if (file == null) return;
 
         IsProcessing = true;
         Progress = 0;
@@ -104,12 +118,14 @@ public partial class MergeViewModel : ViewModelBase
             var filePaths = PdfFiles.Select(f => f.FilePath).ToList();
             var progress = new Progress<int>(p => Progress = p);
             await _pdfService.MergePdfsAsync(filePaths, file.Path.LocalPath, progress);
-            
-            // TODO: 显示成功提示
+
+            WeakReferenceMessenger.Default.Send(
+                new NotificationMessage(new NotificationInfo { Message = $"成功合并 {filePaths.Count} 个PDF文件", Type = NotificationType.Success }));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            // TODO: 显示错误提示
+            WeakReferenceMessenger.Default.Send(
+                new NotificationMessage(new NotificationInfo { Message = "PDF合并失败", Type = NotificationType.Error }));
         }
         finally
         {
